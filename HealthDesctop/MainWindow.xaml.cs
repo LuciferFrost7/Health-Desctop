@@ -9,7 +9,11 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-using HealthDesctop.source;
+// Подключаем классы для работы с профилем пользователя
+using HealthDesctop.source.User;
+
+// Подключаем класс Фабрика для быстрого создания элементов Интерфейса
+using HealthDesctop.source.Fabric;
 
 namespace HealthDesctop
 {
@@ -36,84 +40,116 @@ namespace HealthDesctop
         public MainWindow()
         {
             InitializeComponent();
-
             this.WindowState = WindowState.Maximized; // Устанавливаем полноэкранный режим
-
+            
             Loaded += MainWindow_Loaded; // Подключаем событие при загрузки десктопа
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            mainCanvas = new Canvas();
-            mainCanvas.Width = this.Width;
-            mainCanvas.Height = this.Height;
+            // Создание главной Панели, на которой и будет держаться всё приложение
+            mainCanvas = Fabric.CreateCanvas((Int32)this.Height, (Int32)this.Width);
             mainCanvas.Background = new SolidColorBrush(Colors.AliceBlue);
             this.Content = mainCanvas;
-            
-            Button btnRegisterNewAccount = new Button();
-            btnRegisterNewAccount.Height = 60;
-            btnRegisterNewAccount.Width = 240;
-            btnRegisterNewAccount.Content = "Зарегистрировать нового пользователя";
-            
-            mainCanvas.Children.Add(btnRegisterNewAccount);
-            Canvas.SetLeft(btnRegisterNewAccount, 10);
-            Canvas.SetTop(btnRegisterNewAccount, 30);
-            
-            btnRegisterNewAccount.Click += RegisterNewUser; // Подключение срабатывания функции на клик
-            
-            
-            Button btnLoginAccount = new Button();
-            btnLoginAccount.Height = 60;
-            btnLoginAccount.Width = 240;
-            btnLoginAccount.Content = "Войти в существующий аккаунт";
-            
-            mainCanvas.Children.Add(btnLoginAccount);
-            Canvas.SetLeft(btnLoginAccount, 10);
-            Canvas.SetTop(btnLoginAccount, 30 + 90 + 30);
 
-            btnLoginAccount.Click += LoginUserFunction; // Подключение срабатывания функции на клик
+            // Создание кнопки зарегистрировать
+            String regBtnText = "Зарегистрировать нового пользователя";
+            Button btnRegisterNewAccount = Fabric.CreateButton(regBtnText, 60, 240, 10, 30);
+            mainCanvas.Children.Add(btnRegisterNewAccount);
+            
+            // Создание кнопки входа
+            String logBtnText = "Войти в существующий аккаунт";
+            Button btnLoginAccount = Fabric.CreateButton(logBtnText, 60, 240, 10, 30 + 90 + 30);
+            mainCanvas.Children.Add(btnLoginAccount);
+            
+            btnRegisterNewAccount.Click += RegisterNewUser; // Подключение срабатывания функции Регистрации на клик
+            btnLoginAccount.Click += LoginUserFunction; // Подключение срабатывания функции Входа на клик
         }
 
+        
+        // Функция для создания / об-NULL-ения панели регистрации нового пользователя 
         private void RegisterNewUser(object sender, RoutedEventArgs e)
         {
             if (registerCanvas == null)
             {
+                if (loginCanvas != null)
+                {
+                    DeInitializeLoginCanvas();
+                }
                 InitializeRegisterCanvas();
             }
+            else
+            {
+                DeInitializeRegisterCanvas();
+            }
         }
-        
+        // обНуление панели регистрации
+        private void DeInitializeRegisterCanvas()
+        {
+            mainCanvas.Children.Remove(registerCanvas);
+            registerCanvas = null;
+        }
+        // Создание панели регистрации
         void InitializeRegisterCanvas()
         {
-            registerCanvas = new Canvas();
-            registerCanvas.Width = 1400;
-            registerCanvas.Height = this.Height;
+            // Создание панели регистрации
+            registerCanvas = Fabric.CreateCanvas(1400, (Int32)this.Height, 0, 0);
             registerCanvas.Background = new SolidColorBrush(Colors.IndianRed);
-            
-            Canvas.SetLeft(registerCanvas, 240 + 20);
-            Canvas.SetTop(registerCanvas, 0);
 
-            mainCanvas.Children.Add(registerCanvas);
+            // Создание границы (только слева, 5px, чёрная)
+            Border border = Fabric.CreateBorder(
+                Fabric.CreateThickness(3, 0, 0, 0), Brushes.Black, 240 + 20, 0
+            );
+
+            border.Child = registerCanvas;
+
+            // Добавляем именно border, чтобы граница отобразилась
+            mainCanvas.Children.Add(border);
         }
 
+        
+        // Функция для создания / об-NULL-ения панели входа пользователей
         private void LoginUserFunction(object sender, RoutedEventArgs e)
         {
             if (loginCanvas == null)
             {
+                if (registerCanvas != null)
+                {
+                    DeInitializeRegisterCanvas();
+                }
                 InitializeLoginCanvas();
             }
+            else
+            {
+                DeInitializeLoginCanvas();
+            }
         }
-
+        // обНулление панели входа
+        private void DeInitializeLoginCanvas()
+        {
+            mainCanvas.Children.Remove(loginCanvas);
+            loginCanvas = null;
+        }
+        // Создание панели входа
         private void InitializeLoginCanvas()
         {
-            loginCanvas = new Canvas();
-            loginCanvas.Width = 1400;
-            loginCanvas.Height = this.Height;
+            // Создание панели входа (Canvas)
+            loginCanvas = Fabric.CreateCanvas(1400, (int)this.Height, 0, 0);
             loginCanvas.Background = new SolidColorBrush(Colors.Pink);
-            
-            Canvas.SetLeft(loginCanvas, 240 + 20);
-            Canvas.SetTop(loginCanvas, 0);
-            
-            mainCanvas.Children.Add(loginCanvas);
+
+            // Создание границы (только слева, 5px, чёрная)
+            Border border = Fabric.CreateBorder(
+                Fabric.CreateThickness(3, 0, 0, 0), Brushes.Black, 240 + 20, 0
+            );
+
+            // Устанавливаем loginCanvas внутрь границы
+            border.Child = loginCanvas;
+
+            // Добавляем границу в основную канву
+            mainCanvas.Children.Add(border);
         }
+
+        
+        
     }
 }
