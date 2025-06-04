@@ -219,51 +219,58 @@ namespace HealthDesctop
 
             int fieldLeft = 260;
             int startTop = 100;
-            int spacingY = 80; // Вертикальное расстояние между блоками
+            int spacingY = 80;
             int labelOffset = 0;
             int inputOffset = 5;
             int currentY = startTop;
 
-            void AddInputField(string labelText)
+            void AddInputField(string labelText, string tag)
             {
                 var label = Fabric.CreateTextBlock(labelText, 24, 10, currentY + labelOffset, fieldLeft);
                 registrationForm.Children.Add(label);
 
                 var textbox = Fabric.CreateTextBox(2, 24, 320, 36, currentY + inputOffset, 2 * fieldLeft);
+                textbox.Tag = tag;
                 registrationForm.Children.Add(textbox);
 
                 currentY += spacingY;
             }
 
             // поля формы
-            AddInputField("Введите имя:");
-            AddInputField("Введите фамилию:");
-            AddInputField("Введите ваш вес:");
-            AddInputField("Введите ваш рост:");
-            AddInputField("Введите ваш возраст:");
-            AddInputField("Дата рождения:");
-            
+            AddInputField("Введите имя:", "firstName");
+            AddInputField("Введите фамилию:", "lastName");
+            AddInputField("Введите ваш вес:", "weight");
+            AddInputField("Введите ваш рост:", "height");
+            AddInputField("Введите ваш возраст:", "age");
+            AddInputField("Дата рождения:", "birthDate");
+
             // Кнопка регистрации
             Button btnRegUser = Fabric.CreateButton("Зарегистрировать", 240, 60,
-                (Int32)(registrationForm.Width / 2 - 240), currentY + 20);
+                (int)(registrationForm.Width / 2 - 240), currentY + 20);
             registrationForm.Children.Add(btnRegUser);
-            
+
             registrationFormBorder = Fabric.CreateBorder(
                 Fabric.CreateThickness(2, 2, 0, 2), Brushes.Black, 140, 40
             );
             registrationFormBorder.Child = registrationForm;
 
             registerCanvas.Children.Add(registrationFormBorder);
-            
+
             registerCanvasBorder = Fabric.CreateBorder(
                 Fabric.CreateThickness(3, 0, 0, 0), Brushes.Black, 260, 0
             );
             registerCanvasBorder.Child = registerCanvas;
 
             mainCanvas.Children.Add(registerCanvasBorder);
+
+            // Обработка события нажатия
+            btnRegUser.Click += BtnRegUserOnClick;
         }
 
-        
+
+
+
+
         // Функция для создания / об-NULL-ения панели входа пользователей
         private void LoginUserFunction(object sender, RoutedEventArgs e)
         {
@@ -337,5 +344,69 @@ namespace HealthDesctop
             MainPageCanvas.Background = new SolidColorBrush(Colors.MediumVioletRed);
             mainCanvas.Children.Add(MainPageCanvas);
         }
+        
+        // Функция регистрации пользователя
+        private void BtnRegUserOnClick(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                TextBox tbFirstName = GetTextBoxByTag("firstName");
+                TextBox tbLastName = GetTextBoxByTag("lastName");
+                TextBox tbWeight = GetTextBoxByTag("weight");
+                TextBox tbHeight = GetTextBoxByTag("height");
+                TextBox tbAge = GetTextBoxByTag("age");
+                TextBox tbBirthDate = GetTextBoxByTag("birthDate");
+
+                TextBox[] tBoxes = { tbFirstName, tbLastName, tbWeight, tbHeight, tbAge, tbBirthDate };
+
+                foreach (var tBox in tBoxes)
+                {
+                    if (string.IsNullOrWhiteSpace(tBox.Text))
+                    {
+                        MessageBox.Show($"Поле {tBox.Tag} пустое!", "Lost Field", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+                }
+
+                User user = new User();
+                user.FirstName = tbFirstName.Text;
+                user.LastName = tbLastName.Text;
+                user.Weight = Convert.ToDouble(tbWeight.Text);
+                user.Height = Convert.ToDouble(tbHeight.Text);
+                user.Age = Convert.ToInt32(tbAge.Text);
+
+                // if (!DateOnly.TryParse(tbBirthDate.Text, out DateOnly birthDate))
+                // {
+                //     MessageBox.Show("Неверный формат даты рождения. Используй формат: гггг-мм-дд",
+                //         "Ошибка ввода", MessageBoxButton.OK, MessageBoxImage.Error);
+                //     return;
+                // }
+                user.BirthDate = new DateOnly(2025, 01, 01);
+
+                User.RegisterNewUser(user);
+                MessageBox.Show("Пользователь зарегистрирован!", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Произошла ошибка: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        
+        private TextBox GetTextBoxByTag(String tag)
+        {
+            TextBox tBox = registrationForm.Children
+                .OfType<TextBox>()
+                .FirstOrDefault(tb => (string)tb.Tag == tag);
+
+            if (tBox != null)
+            {
+                return tBox;
+            }
+            else
+            {
+                throw new Exception($"Поле с тегом '{tag}' для ввода не найдено");
+            }
+        }
+
     }
 }
