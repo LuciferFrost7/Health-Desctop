@@ -71,5 +71,44 @@ namespace HealthDesctop.source.Fabric
             
             return border;
         }
+        
+        
+        // Фабричное создание Текстового Поля
+        public static TextBox CreateTextBox(Int32 thickness, Int32 fontSize, Int32 width, Int32 height, Int32 top=0, Int32 left=0)
+        {
+            TextBox textBox = new TextBox()
+            {
+                Width = width,
+                Height = height,
+                FontSize = fontSize,
+                Margin = new Thickness(thickness),
+                HorizontalAlignment = HorizontalAlignment.Left,
+                VerticalAlignment = VerticalAlignment.Top
+            };
+            Canvas.SetLeft(textBox, left);
+            Canvas.SetTop(textBox, top);
+
+            return textBox;
+        }
+        
+        
+        //Фабричное создание Поля для ввода
+        public static TextBlock CreateTextBlock(String content, Int32 fontSize, Int32 thickness, Int32 top, Int32 left)
+        {
+            TextBlock textBlock = new TextBlock
+            {
+                Text = content,
+                FontSize = fontSize,
+                Foreground = Brushes.Black,
+                TextWrapping = TextWrapping.Wrap,
+                TextAlignment = TextAlignment.Center,
+                Margin = new Thickness(thickness)
+            };
+            
+            Canvas.SetLeft(textBlock, left);
+            Canvas.SetTop(textBlock, top);
+            
+            return textBlock;
+        }
     }
 }

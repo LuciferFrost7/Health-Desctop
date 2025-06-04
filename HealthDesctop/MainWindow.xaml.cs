@@ -19,6 +19,7 @@ using HealthDesctop.source.Fabric;
 // Подключаем анимции
 using HealthDesctop.source.Animations;
 
+
 namespace HealthDesctop
 {
     public partial class MainWindow : Window
@@ -32,7 +33,12 @@ namespace HealthDesctop
         private Border registerCanvasBorder = null; // Граница с канвасом регистрации
         private Canvas loginCanvas = null; // Канвас, который открывает проход пользователю
         private Border loginCanvasBorder = null; // Граница с канвасом входа
-        private Boolean IsRegOrLogMenuOpen = false;
+        private Boolean IsRegOrLogMenuOpen = false; // Переменная показывающая открыто ли меню рег-лог сейчас
+
+        
+        private Canvas registrationForm = null; // Канвас формы регистрации нового пользователя
+        private Border registrationFormBorder = null; // Граница с формой регистрации нового пользователя
+        
 
         private Canvas profileCanvas; // Панель с профилем пользователя
         private Canvas aimCanvas; // Панель с целью пользователя
@@ -195,6 +201,7 @@ namespace HealthDesctop
         // обНуление панели регистрации
         private void DeInitializeRegisterCanvas()
         {
+            registrationForm.Children.Clear();
             registerCanvasBorder.Child = null;
             registerCanvasBorder = null;
             mainCanvas.Children.Remove(registerCanvas);
@@ -204,17 +211,55 @@ namespace HealthDesctop
         void InitializeRegisterCanvas()
         {
             // Создание панели регистрации
-            registerCanvas = Fabric.CreateCanvas((Int32)this.Height, 1400, 0, 0);
+            registerCanvas = Fabric.CreateCanvas((int)this.Height, 1400, 0, 0);
             registerCanvas.Background = new SolidColorBrush(Colors.IndianRed);
 
-            // Создание границы (только слева, 5px, чёрная)
-            registerCanvasBorder = Fabric.CreateBorder(
-                Fabric.CreateThickness(3, 0, 0, 0), Brushes.Black, 240 + 20, 0
-            );
+            registrationForm = Fabric.CreateCanvas((int)this.Height - 80, 1320, 0, 0);
+            registrationForm.Background = new SolidColorBrush(Colors.SlateGray);
 
+            int fieldLeft = 260;
+            int startTop = 100;
+            int spacingY = 80; // Вертикальное расстояние между блоками
+            int labelOffset = 0;
+            int inputOffset = 5;
+            int currentY = startTop;
+
+            void AddInputField(string labelText)
+            {
+                var label = Fabric.CreateTextBlock(labelText, 24, 10, currentY + labelOffset, fieldLeft);
+                registrationForm.Children.Add(label);
+
+                var textbox = Fabric.CreateTextBox(2, 24, 320, 36, currentY + inputOffset, 2 * fieldLeft);
+                registrationForm.Children.Add(textbox);
+
+                currentY += spacingY;
+            }
+
+            // поля формы
+            AddInputField("Введите имя:");
+            AddInputField("Введите фамилию:");
+            AddInputField("Введите ваш вес:");
+            AddInputField("Введите ваш рост:");
+            AddInputField("Введите ваш возраст:");
+            AddInputField("Дата рождения:");
+            
+            // Кнопка регистрации
+            Button btnRegUser = Fabric.CreateButton("Зарегистрировать", 240, 60,
+                (Int32)(registrationForm.Width / 2 - 240), currentY + 20);
+            registrationForm.Children.Add(btnRegUser);
+            
+            registrationFormBorder = Fabric.CreateBorder(
+                Fabric.CreateThickness(2, 2, 0, 2), Brushes.Black, 140, 40
+            );
+            registrationFormBorder.Child = registrationForm;
+
+            registerCanvas.Children.Add(registrationFormBorder);
+            
+            registerCanvasBorder = Fabric.CreateBorder(
+                Fabric.CreateThickness(3, 0, 0, 0), Brushes.Black, 260, 0
+            );
             registerCanvasBorder.Child = registerCanvas;
 
-            // Добавляем именно border, чтобы граница отобразилась
             mainCanvas.Children.Add(registerCanvasBorder);
         }
 
