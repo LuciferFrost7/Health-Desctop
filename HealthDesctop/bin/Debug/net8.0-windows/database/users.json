@@ -1,20 +1,11 @@
-[
+﻿[
   {
     "Id": 1,
-    "FirstName": "\u0418\u0432\u0430\u043D",
-    "LastName": "\u0418\u0432\u0430\u043D\u043E\u0432",
-    "Weight": 80,
-    "Height": 1.75,
-    "Age": 25,
+    "FirstName": "aboba",
+    "LastName": "abobavich",
+    "Weight": 55,
+    "Height": 170,
+    "Age": 22,
     "BirthDate": "2000-01-01"
-  },
-  {
-    "Id": 2,
-    "FirstName": "1",
-    "LastName": "a",
-    "Weight": 1,
-    "Height": 2,
-    "Age": 12,
-    "BirthDate": "2025-01-01"
   }
 ]

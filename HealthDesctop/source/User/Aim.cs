@@ -1,15 +1,68 @@
-﻿namespace HealthDesctop.source.User;
+﻿using System.Text.Json;
+using System.Text.Json.Serialization;
+using HealthDesctop.source.Util;
+using HealthDesctop.source.User.Converter;
 
-public class Aim
+namespace HealthDesctop.source.User
 {
-    public DateOnly StartDate { get; set; }  // Дата начала достижения цели
-    public DateOnly FinishDate { get; set; } // Дата окончания достижения цели
-    
-    public Double StartWeight { get; set; }  // Начальный вес
-    public Double FinishWeight { get; set; } // Окончательный вес
-    
-    public Boolean IsFinished { get; set; } // Окончена цель или нет
-    
-    // Пустой конструктор для работы с БД
-    public Aim(){}
+    public class Aim
+    {
+        public DateOnly StartDate { get; set; }
+        public DateOnly FinishDate { get; set; }
+
+        public double StartWeight { get; set; }
+        public double FinishWeight { get; set; }
+
+        public bool IsFinished { get; set; }
+
+        public int UserId { get; set; } // Привязка к пользователю
+
+        public Aim() { }
+
+        // Метод для добавления цели в БД
+        public static void AddAim(Aim newAim)
+        {
+            var options = new JsonSerializerOptions
+            {
+                WriteIndented = true
+            };
+            options.Converters.Add(new DateOnlyJsonConverter());
+
+            string dbPath = DatabasePaths.AimsDatabasePath;
+
+            List<Aim> aims;
+            string dbContent = FileWorker.ReadFile(dbPath);
+
+            if (!string.IsNullOrWhiteSpace(dbContent))
+            {
+                aims = JsonSerializer.Deserialize<List<Aim>>(dbContent, options);
+            }
+            else
+            {
+                aims = new List<Aim>();
+            }
+
+            aims.Add(newAim);
+            string updatedJson = JsonSerializer.Serialize(aims, options);
+            FileWorker.WriteInFile(dbPath, updatedJson);
+        }
+
+        // Метод для получения всех целей
+        public static List<Aim> GetAllAims()
+        {
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+            options.Converters.Add(new DateOnlyJsonConverter());
+
+            string dbPath = DatabasePaths.AimsDatabasePath;
+            string dbContent = FileWorker.ReadFile(dbPath);
+
+            if (string.IsNullOrWhiteSpace(dbContent))
+                return new List<Aim>();
+
+            return JsonSerializer.Deserialize<List<Aim>>(dbContent, options) ?? new List<Aim>();
+        }
+    }
 }

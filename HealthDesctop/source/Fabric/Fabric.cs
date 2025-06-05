@@ -110,5 +110,20 @@ namespace HealthDesctop.source.Fabric
             
             return textBlock;
         }
+        
+        
+        // Фабричное создание Выпадающих списков
+        public static ComboBox CreateComboBox(Int32 height,Int32 width, Int32 top, Int32 left)
+        {
+            ComboBox comboBox = new ComboBox();
+            comboBox.Width = width;
+            comboBox.Height = height;
+            comboBox.Margin = new Thickness(10);
+            
+            Canvas.SetLeft(comboBox, left);
+            Canvas.SetTop(comboBox, top);
+            
+            return comboBox;
+        }
     }
 }

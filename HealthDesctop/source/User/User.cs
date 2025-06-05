@@ -57,5 +57,33 @@ namespace HealthDesctop.source.User
             string updatedJson = JsonSerializer.Serialize(users, options);
             FileWorker.WriteInFile(dbPath, updatedJson);
         }
+
+        public static List<User> GetUsers()
+        {
+            String dbPath = DatabasePaths.UsersDatabasePath;
+            
+            String dbContent = FileWorker.ReadFile(dbPath);
+
+            if (string.IsNullOrWhiteSpace(dbContent))
+            {
+                return new List<User>(); // Если файл пустой — вернуть пустой список
+            }
+
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+            options.Converters.Add(new DateOnlyJsonConverter());
+
+            // Десериализация JSON в список пользователей
+            List<User> users = JsonSerializer.Deserialize<List<User>>(dbContent, options) ?? new List<User>();
+
+            return users;
+        }
+        
+        public override string ToString()
+        {
+            return $"{FirstName} {LastName}";
+        }
     }
 }

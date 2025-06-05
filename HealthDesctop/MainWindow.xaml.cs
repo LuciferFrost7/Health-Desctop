@@ -31,13 +31,15 @@ namespace HealthDesctop
         
         private Canvas registerCanvas = null; // Канвас, который встречает пользователя впервые
         private Border registerCanvasBorder = null; // Граница с канвасом регистрации
+        private Canvas registrationForm = null; // Канвас формы регистрации нового пользователя
+        private Border registrationFormBorder = null; // Граница с формой регистрации нового пользователя
+        
         private Canvas loginCanvas = null; // Канвас, который открывает проход пользователю
         private Border loginCanvasBorder = null; // Граница с канвасом входа
         private Boolean IsRegOrLogMenuOpen = false; // Переменная показывающая открыто ли меню рег-лог сейчас
-
+        private ComboBox usersComboBox = null; // Выпадающий список пользователей
         
-        private Canvas registrationForm = null; // Канвас формы регистрации нового пользователя
-        private Border registrationFormBorder = null; // Граница с формой регистрации нового пользователя
+
         
 
         private Canvas profileCanvas; // Панель с профилем пользователя
@@ -48,11 +50,13 @@ namespace HealthDesctop
         private Canvas dishCanvas; // Панель с вашими блюдами
         private Canvas createDishCanvas; // Добавить новое блюда
 
-        private Canvas MainPageCanvas; // Панель, содержащая все основные элементы главного меню
+        private Canvas MainPageCanvas = null; // Панель, содержащая все основные элементы главного меню
         private Canvas breakfastCanvas; // Панелька с утренним питанием
         private Canvas lunchCanvas; // Панелька с дневным питанием
         private Canvas dinnerCanvas; // Панелька с вечерним питанием
 
+        private Canvas weekAndDayCanvas = null; // Панелька, на которой будет находиться день / неделя меню
+        private Canvas daysCanvas = null;
         private Canvas weekCanvas; // Панель с недельным планом
 
         public MainWindow()
@@ -312,6 +316,29 @@ namespace HealthDesctop
             loginCanvas = Fabric.CreateCanvas((Int32)this.Height, 1400, 0, 0);
             loginCanvas.Background = new SolidColorBrush(Colors.Pink);
 
+            // Создаём выпадающий список пользователей
+            usersComboBox = Fabric.CreateComboBox(40, 240, (Int32)this.Height / 2,(Int32)loginCanvas.Width / 2 - 240);
+            List<User> users = User.GetUsers();
+            if (users.Count == 0)
+            { }
+            else
+            {
+                foreach (User user in users)
+                {
+                    usersComboBox.Items.Add(user); // Добавляем сам объект User
+                }
+            }
+            loginCanvas.Children.Add(usersComboBox);
+            
+            // Подключаем событие выбора пользователя
+            usersComboBox.SelectionChanged += OnUserSelected;
+
+            
+            
+            
+            
+            
+            
             // Создание кнопки входа в аккаунт
             Button btnLogInAccount = Fabric.CreateButton(
                 "Войти", 240, 60, (Int32)loginCanvas.Width / 2 - 120, (Int32)(loginCanvas.Height * 0.75) - 30
@@ -332,18 +359,26 @@ namespace HealthDesctop
             // Добавляем событие при нажатии на кнопку входа
             btnLogInAccount.Click += (object sender, RoutedEventArgs e) =>
             {
-                ClearRegOrLogScreen();
+                if (currentUser != null)
+                {
+                    ClearRegOrLogScreen();
+                }
             };
         }
-        
-        
-        // Функция для вызова главного меню
-        private void MainMenu()
+
+        private User currentUser = null;
+        private void OnUserSelected(object sender, SelectionChangedEventArgs e)
         {
-            MainPageCanvas = Fabric.CreateCanvas((Int32)this.Height, (Int32)this.Width, 0, 0);
-            MainPageCanvas.Background = new SolidColorBrush(Colors.MediumVioletRed);
-            mainCanvas.Children.Add(MainPageCanvas);
+            if (usersComboBox.SelectedItem is User selectedUser)
+            {
+                // Пример действия: вывод в консоль или сохранение в переменную
+                Console.WriteLine($"Выбран пользователь: {selectedUser}");
+
+                // Можешь сохранить его в поле, если надо использовать позже
+                currentUser = selectedUser;
+            }
         }
+        
         
         // Функция регистрации пользователя
         private void BtnRegUserOnClick(object sender, RoutedEventArgs e)
@@ -375,13 +410,14 @@ namespace HealthDesctop
                 user.Height = Convert.ToDouble(tbHeight.Text);
                 user.Age = Convert.ToInt32(tbAge.Text);
 
-                // if (!DateOnly.TryParse(tbBirthDate.Text, out DateOnly birthDate))
-                // {
-                //     MessageBox.Show("Неверный формат даты рождения. Используй формат: гггг-мм-дд",
-                //         "Ошибка ввода", MessageBoxButton.OK, MessageBoxImage.Error);
-                //     return;
-                // }
-                user.BirthDate = new DateOnly(2025, 01, 01);
+                if (!DateOnly.TryParse(tbBirthDate.Text, out DateOnly birthDate))
+                {
+                    MessageBox.Show("Неверный формат даты рождения. Используй формат: гггг-мм-дд",
+                        "Ошибка ввода", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                user.BirthDate = birthDate;
 
                 User.RegisterNewUser(user);
                 MessageBox.Show("Пользователь зарегистрирован!", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -407,6 +443,64 @@ namespace HealthDesctop
                 throw new Exception($"Поле с тегом '{tag}' для ввода не найдено");
             }
         }
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        // Функция для вызова главного меню
+        private void MainMenu()
+        {
+            // Создание главного фона
+            MainPageCanvas = Fabric.CreateCanvas((Int32)this.Height, (Int32)this.Width, 0, 0);
+            MainPageCanvas.Background = new SolidColorBrush(Colors.LightGreen);
+            mainCanvas.Children.Add(MainPageCanvas);
+            
+            // Создание Панели День-Неделя
+            InitializeDayWeekCanvas();
+        }
+        
+        
+        // Функция для создания Панели День-Неделя
+        private void InitializeDayWeekCanvas()
+        {
+            weekAndDayCanvas = Fabric.CreateCanvas(116, (Int32)this.Width - 140, 0, 0);
+            weekAndDayCanvas.Background = new SolidColorBrush(Colors.LightGray);
 
+            Button btnWeek = Fabric.CreateButton("Неделя", (Int32)weekAndDayCanvas.Width / 2 - 34, 46, 9, 10);
+            weekAndDayCanvas.Children.Add(btnWeek);
+            
+            Button btnDays = Fabric.CreateButton("Дни недели", (Int32)weekAndDayCanvas.Width / 2 - 34, 46, (Int32)weekAndDayCanvas.Width / 2 + 9 + 6, 10);
+            weekAndDayCanvas.Children.Add(btnDays);
+
+            InitializeDaysCanvas();
+            weekAndDayCanvas.Children.Add(daysCanvas);
+            
+            mainCanvas.Children.Add(weekAndDayCanvas);
+        }
+        
+        // Функция для создания панели Дней
+        private void InitializeDaysCanvas()
+        {
+            daysCanvas = Fabric.CreateCanvas(50, (Int32)weekAndDayCanvas.Width - 40, 46 + 10 + 5, 14);
+            daysCanvas.Background = new SolidColorBrush(Colors.Gray);
+            
+            String[] weekDays = { "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье" } ;
+            Int32 standartSpace = 8;
+            Int32 buttonWeight = Convert.ToInt32((daysCanvas.Width - ((weekDays.Length + 1) * standartSpace)) / weekDays.Length);
+            
+            for (int i = 0; i < weekDays.Length; i++)
+            {
+                Button btn = Fabric.CreateButton(weekDays[i], buttonWeight, 42, i * buttonWeight + 5 * (i + 1), 4);
+                daysCanvas.Children.Add(btn);
+            }
+        }
+        
     }
 }
