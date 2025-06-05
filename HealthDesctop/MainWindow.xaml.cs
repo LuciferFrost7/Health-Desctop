@@ -43,27 +43,28 @@ namespace HealthDesctop
         
 
         private Canvas profileCanvas; // Панель с профилем пользователя
-        private Canvas aimCanvas; // Панель с целью пользователя
-
         private Canvas settingCanvas; // Панель с настройками приложения
-
+        
+        private Canvas aimsCanvas; // Панель с целью пользователя
         private Canvas dishCanvas; // Панель с вашими блюдами
-        private Canvas createDishCanvas; // Добавить новое блюда
+        // Можно добавить какую-то панельку в главное меню
+        
+        
 
         private Canvas MainPageCanvas = null; // Панель, содержащая все основные элементы главного меню
-        private static Canvas breakfastCanvas; // Панелька с утренним питанием
-        private static Canvas lunchCanvas; // Панелька с дневным питанием
-        private static Canvas dinnerCanvas; // Панелька с вечерним питанием
+        private static Canvas breakfastCanvas = null; // Панелька с утренним питанием
+        private static Canvas lunchCanvas = null; // Панелька с дневным питанием
+        private static Canvas dinnerCanvas = null; // Панелька с вечерним питанием
 
         private Canvas weekAndDayCanvas = null; // Панелька, на которой будет находиться день / неделя меню
-        private Canvas daysCanvas = null;
-        private Canvas weekCanvas; // Панель с недельным планом
+        private Canvas daysCanvas = null; // Панель с днями недели
+        private Canvas weekCanvas = null; // Панель с недельным планом
         
         private String[] weekDays = { "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье" } ;
         private Int32 dayOfWeek = (Int32)DateTime.Now.DayOfWeek;
         
         private Canvas FoodCanvas = null; // Панель приёмов пищи
-        private Canvas[] FoodType;
+        private Canvas[] FoodType; // Массив Канвасов с приёмами пищи
         private Button btnLeftFood = null;
         private Button btnRightFood = null;
 
@@ -628,8 +629,7 @@ namespace HealthDesctop
             }
         }
 
-
-
+        
         // Функция для создания панели приёмов пищи
         private void InitializeFoodCanvas()
         {
@@ -653,11 +653,15 @@ namespace HealthDesctop
             
             // Создание Левой кнопки переключения приёмов пищи
             btnLeftFood = Fabric.CreateButton("<", 40, 40, 5, (Int32)(FoodCanvas.Height / 2) - 20);
+            btnLeftFood.FontWeight = FontWeights.Bold;
+            btnLeftFood.FontSize = 20;
             btnLeftFood.Tag = "leftButton";
             FoodCanvas.Children.Add(btnLeftFood);
             
             // Создание Правой кнопки переключения приёмов пищи
             btnRightFood = Fabric.CreateButton(">", 40, 40, (Int32)(FoodCanvas.Width - 40 - 5), (Int32)(FoodCanvas.Height / 2) - 20);
+            btnRightFood.FontWeight = FontWeights.Bold;
+            btnRightFood.FontSize = 20;
             btnRightFood.Tag = "rightButton";
             FoodCanvas.Children.Add(btnRightFood);
             
@@ -688,8 +692,7 @@ namespace HealthDesctop
             FoodCanvasUpdateVisibility();
         }
         
-        private void BtnRightFoodOnClick(object sender, RoutedEventArgs e)
-        {
+        private void BtnRightFoodOnClick(object sender, RoutedEventArgs e) {
             if (foodType[0] == 1)
             {
                 foodType[0] = 0;
@@ -750,8 +753,8 @@ namespace HealthDesctop
         private void InitializeBreakfastCanvas()
         {
             Int32 height = (Int32)(FoodCanvas.Height);
-            Int32 width = (Int32)(FoodCanvas.Width - 80 - 5 - 5);
-            breakfastCanvas = Fabric.CreateCanvas((Int32)(height * 0.9), width, (Int32)(height * 0.05), 10 + 40 + 10);
+            Int32 width = (Int32)(FoodCanvas.Width - 80 - 10 - 10);
+            breakfastCanvas = Fabric.CreateCanvas((Int32)(height * 0.9), width, (Int32)(height * 0.05), 5 + 40 + 5);
             breakfastCanvas.Background = new SolidColorBrush(Colors.DeepSkyBlue);
             breakfastCanvas.Visibility = Visibility.Hidden;
         }
@@ -769,8 +772,8 @@ namespace HealthDesctop
         private void InitializeLunchCanvas()
         {
             Int32 height = (Int32)(FoodCanvas.Height);
-            Int32 width = (Int32)(FoodCanvas.Width - 80 - 5 - 5);
-            lunchCanvas = Fabric.CreateCanvas((Int32)(height * 0.9), width, (Int32)(height * 0.05), 10 + 40 + 10);
+            Int32 width = (Int32)(FoodCanvas.Width - 80 - 10 - 10);
+            lunchCanvas = Fabric.CreateCanvas((Int32)(height * 0.9), width, (Int32)(height * 0.05), 5 + 40 + 5);
             lunchCanvas.Background = new SolidColorBrush(Colors.Gray);
             lunchCanvas.Visibility = Visibility.Hidden;
         }
@@ -789,8 +792,8 @@ namespace HealthDesctop
         private void InitializeDinnerCanvas()
         {
             Int32 height = (Int32)(FoodCanvas.Height);
-            Int32 width = (Int32)(FoodCanvas.Width - 80 - 5 - 5);
-            dinnerCanvas = Fabric.CreateCanvas((Int32)(height * 0.9), width, (Int32)(height * 0.05), 10 + 40 + 10);
+            Int32 width = (Int32)(FoodCanvas.Width - 80 - 10 - 10);
+            dinnerCanvas = Fabric.CreateCanvas((Int32)(height * 0.9), width, (Int32)(height * 0.05), 5 + 40 + 5);
             dinnerCanvas.Background = new SolidColorBrush(Colors.PaleVioletRed);
             dinnerCanvas.Visibility = Visibility.Hidden;
         }
