@@ -51,13 +51,27 @@ namespace HealthDesctop
         private Canvas createDishCanvas; // Добавить новое блюда
 
         private Canvas MainPageCanvas = null; // Панель, содержащая все основные элементы главного меню
-        private Canvas breakfastCanvas; // Панелька с утренним питанием
-        private Canvas lunchCanvas; // Панелька с дневным питанием
-        private Canvas dinnerCanvas; // Панелька с вечерним питанием
+        private static Canvas breakfastCanvas; // Панелька с утренним питанием
+        private static Canvas lunchCanvas; // Панелька с дневным питанием
+        private static Canvas dinnerCanvas; // Панелька с вечерним питанием
 
         private Canvas weekAndDayCanvas = null; // Панелька, на которой будет находиться день / неделя меню
         private Canvas daysCanvas = null;
         private Canvas weekCanvas; // Панель с недельным планом
+        
+        private String[] weekDays = { "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье" } ;
+        private Int32 dayOfWeek = (Int32)DateTime.Now.DayOfWeek;
+        
+        private Canvas FoodCanvas = null; // Панель приёмов пищи
+        private Canvas[] FoodType;
+        private Button btnLeftFood = null;
+        private Button btnRightFood = null;
+
+        private Int32[] foodType = { 0, 1, 0 }; // Массив с включёнными тремя приёмами пищи
+        
+        
+
+        
 
         public MainWindow()
         {
@@ -474,16 +488,65 @@ namespace HealthDesctop
             weekAndDayCanvas.Background = new SolidColorBrush(Colors.LightGray);
 
             Button btnWeek = Fabric.CreateButton("Неделя", (Int32)weekAndDayCanvas.Width / 2 - 34, 46, 9, 10);
+            btnWeek.ClearValue(Button.BackgroundProperty);
             weekAndDayCanvas.Children.Add(btnWeek);
             
             Button btnDays = Fabric.CreateButton("Дни недели", (Int32)weekAndDayCanvas.Width / 2 - 34, 46, (Int32)weekAndDayCanvas.Width / 2 + 9 + 6, 10);
+            btnDays.Background = new SolidColorBrush(Colors.AliceBlue);
             weekAndDayCanvas.Children.Add(btnDays);
-
+            
+            mainCanvas.Children.Add(weekAndDayCanvas);
+            
             InitializeDaysCanvas();
             weekAndDayCanvas.Children.Add(daysCanvas);
             
-            mainCanvas.Children.Add(weekAndDayCanvas);
+            // Добавляем событие при нажатии на кнопку Неделя
+            btnWeek.Click += BtnWeek_Click;
+            
+            // Добавляем событие при нажатии на кнопку дней нежели
+            btnDays.Click += BtnDays_Click;
         }
+        private void BtnWeek_Click(object sender, RoutedEventArgs e)
+        {
+            ResetToggleButtons();
+            ((Button)sender).Background = new SolidColorBrush(Colors.AliceBlue);
+            
+            // Убираем панель по дням, если она открыта
+            if (daysCanvas != null)
+            {
+                DeInitializeDaysCanvas();
+            }
+
+            // Добавляем панель по неделе
+            InitializeWeekCanvas();
+            weekAndDayCanvas.Children.Add(weekCanvas);
+        }
+        private void BtnDays_Click(object sender, RoutedEventArgs e)
+        {
+            ResetToggleButtons();
+            ((Button)sender).Background = new SolidColorBrush(Colors.AliceBlue);
+
+            // Убираем панель недели, если она открыта
+            if (weekCanvas != null)
+            {
+                DeInitializeWeekCanvas();
+            }
+            
+            // Создаём панель дней
+            InitializeDaysCanvas();
+            weekAndDayCanvas.Children.Add(daysCanvas);
+        }
+        private void ResetToggleButtons()
+        {
+            foreach (UIElement element in weekAndDayCanvas.Children)
+            {
+                if (element is Button btn)
+                {
+                    btn.ClearValue(Button.BackgroundProperty);
+                }
+            }
+        }
+
         
         // Функция для создания панели Дней
         private void InitializeDaysCanvas()
@@ -491,16 +554,254 @@ namespace HealthDesctop
             daysCanvas = Fabric.CreateCanvas(50, (Int32)weekAndDayCanvas.Width - 40, 46 + 10 + 5, 14);
             daysCanvas.Background = new SolidColorBrush(Colors.Gray);
             
-            String[] weekDays = { "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье" } ;
             Int32 standartSpace = 8;
             Int32 buttonWeight = Convert.ToInt32((daysCanvas.Width - ((weekDays.Length + 1) * standartSpace)) / weekDays.Length);
             
             for (int i = 0; i < weekDays.Length; i++)
             {
                 Button btn = Fabric.CreateButton(weekDays[i], buttonWeight, 42, i * buttonWeight + 5 * (i + 1), 4);
+                btn.Background = new SolidColorBrush(Colors.LightGray);
+                btn.Tag = weekDays[i];
                 daysCanvas.Children.Add(btn);
+                
+                btn.Click += DayBtnOnClick;
+            }
+            
+            // просматриваем кнопки в поиске кнопки с текущим днём недели
+            foreach (Button btn in daysCanvas.Children)
+            {
+                if ((string)btn.Tag == weekDays[dayOfWeek])
+                {
+                    DayBtnOnClick(btn, null); // Симулируем клик
+                    break;
+                }
+            }
+            InitializeFoodCanvas();
+            MainPageCanvas.Children.Add(FoodCanvas);
+        }
+        // Функция для очистки панели дней
+        private void DeInitializeDaysCanvas()
+        {
+            if (daysCanvas != null)
+            {
+                MainPageCanvas.Children.Remove(FoodCanvas);
+                DeInitializeFoodCanvas();
+                daysCanvas.Children.Clear();
+                daysCanvas = null;
+            }
+        }
+        private void DayBtnOnClick(object sender, RoutedEventArgs e)
+        {
+            Button clickedBtn = sender as Button;
+            if (clickedBtn == null) return;
+
+            // Сброс цвета всех кнопок
+            foreach (Button btn in daysCanvas.Children)
+            {
+                btn.Background = new SolidColorBrush(Colors.LightGray);
+
+                if ((String)btn.Tag == weekDays[dayOfWeek])
+                {
+                    btn.Background = new SolidColorBrush(Colors.AliceBlue);
+                }
+            }
+
+            // Выделяем нажатую кнопку
+            clickedBtn.Background = new SolidColorBrush(Colors.MediumSpringGreen);
+        }
+
+        
+        // Функция для создания панели недели
+        private void InitializeWeekCanvas()
+        {
+            weekCanvas = Fabric.CreateCanvas((Int32)(this.Height * 0.75), (Int32)this.Width - 60 - 140,
+                (Int32)(this.Height * 0.18), 25);
+            weekCanvas.Background = new SolidColorBrush(Colors.LightGray);
+        }
+        // Функция для очистки панели дней
+        private void DeInitializeWeekCanvas()
+        {
+            if(weekCanvas != null){
+                weekAndDayCanvas.Children.Remove(weekCanvas);
+                weekCanvas.Children.Clear();
+                weekCanvas = null;
+            }
+        }
+
+
+
+        // Функция для создания панели приёмов пищи
+        private void InitializeFoodCanvas()
+        {
+            FoodCanvas = Fabric.CreateCanvas((Int32)(this.Height * 0.75), (Int32)(this.Width * 0.8),
+                (Int32)(this.Height * 0.18), 25);
+            FoodCanvas.Background = new SolidColorBrush(Colors.LightGray);
+            
+            // Добавляем Панель Завтраков
+            InitializeBreakfastCanvas();
+            FoodCanvas.Children.Add(breakfastCanvas);
+            
+            // Добавляем Панель Обедов
+            InitializeLunchCanvas();
+            FoodCanvas.Children.Add(lunchCanvas);
+            
+            // Добавляем Панель Ужинов
+            InitializeDinnerCanvas();
+            FoodCanvas.Children.Add(dinnerCanvas);
+            
+            FoodType = new Canvas[] { breakfastCanvas, lunchCanvas, dinnerCanvas };
+            
+            // Создание Левой кнопки переключения приёмов пищи
+            btnLeftFood = Fabric.CreateButton("<", 40, 40, 5, (Int32)(FoodCanvas.Height / 2) - 20);
+            btnLeftFood.Tag = "leftButton";
+            FoodCanvas.Children.Add(btnLeftFood);
+            
+            // Создание Правой кнопки переключения приёмов пищи
+            btnRightFood = Fabric.CreateButton(">", 40, 40, (Int32)(FoodCanvas.Width - 40 - 5), (Int32)(FoodCanvas.Height / 2) - 20);
+            btnRightFood.Tag = "rightButton";
+            FoodCanvas.Children.Add(btnRightFood);
+            
+            FoodCanvasUpdateVisibility();
+            
+            // Добавляем событие на нажатие левой кнопки
+            btnLeftFood.Click += BtnLeftFoodOnClick;
+            
+            // Добавляем событие на нажатие правой кнопки
+            btnRightFood.Click += BtnRightFoodOnClick;
+        }
+
+        private void BtnLeftFoodOnClick(object sender, RoutedEventArgs e)
+        {
+            if (foodType[0] == 1)
+            {
+            }
+            else if (foodType[1] == 1)
+            {
+                foodType[0] = 1;
+                foodType[1] = 0;
+            }
+            else if (foodType[2] == 1)
+            {
+                foodType[1] = 1;
+                foodType[2] = 0;
+            }
+            FoodCanvasUpdateVisibility();
+        }
+        
+        private void BtnRightFoodOnClick(object sender, RoutedEventArgs e)
+        {
+            if (foodType[0] == 1)
+            {
+                foodType[0] = 0;
+                foodType[1] = 1;
+            }
+            else if (foodType[1] == 1)
+            {
+                foodType[1] = 0;
+                foodType[2] = 1;
+            }
+            else if (foodType[2] == 1)
+            {
+            }
+            FoodCanvasUpdateVisibility();
+        }
+
+        private void FoodCanvasUpdateVisibility()
+        {
+            btnLeftFood.Foreground = new SolidColorBrush(foodType[0] == 1 ? Colors.Gray : Colors.Black);
+            btnRightFood.Foreground = new SolidColorBrush(foodType[2] == 1 ? Colors.Gray : Colors.Black);
+   
+            for (Int32 i = 0; i < foodType.Length; i++)
+            {
+                if (foodType[i] == 1)
+                {
+                    if (FoodType[i] != null)
+                    {
+                        FoodType[i].Visibility = Visibility.Visible;
+                    }
+                }
+                else
+                {
+                    if (FoodType[i] != null)
+                    {
+                        FoodType[i].Visibility = Visibility.Hidden;
+                    }
+                }
+            }
+        }
+
+        // Функция для очистки панели приёмов пищи
+        private void DeInitializeFoodCanvas()
+        {
+            if(FoodCanvas != null)
+            {
+                btnLeftFood = null;
+                btnRightFood = null;
+                DeInitializeBreakfastCanvas();
+                DeInitializeLunchCanvas();
+                DeInitializeDinnerCanvas();
+
+                FoodCanvas.Children.Clear();
+                FoodCanvas = null;
             }
         }
         
+        // Функция для создания панели завтрака
+        private void InitializeBreakfastCanvas()
+        {
+            Int32 height = (Int32)(FoodCanvas.Height);
+            Int32 width = (Int32)(FoodCanvas.Width - 80 - 5 - 5);
+            breakfastCanvas = Fabric.CreateCanvas((Int32)(height * 0.9), width, (Int32)(height * 0.05), 10 + 40 + 10);
+            breakfastCanvas.Background = new SolidColorBrush(Colors.DeepSkyBlue);
+            breakfastCanvas.Visibility = Visibility.Hidden;
+        }
+        // Функция для очистки панели завтрака
+        private void DeInitializeBreakfastCanvas()
+        {
+            if (breakfastCanvas != null)
+            {
+                breakfastCanvas.Children.Clear();
+                breakfastCanvas = null;
+            }
+        }
+        
+        // Функция для создания панели Обеда
+        private void InitializeLunchCanvas()
+        {
+            Int32 height = (Int32)(FoodCanvas.Height);
+            Int32 width = (Int32)(FoodCanvas.Width - 80 - 5 - 5);
+            lunchCanvas = Fabric.CreateCanvas((Int32)(height * 0.9), width, (Int32)(height * 0.05), 10 + 40 + 10);
+            lunchCanvas.Background = new SolidColorBrush(Colors.Gray);
+            lunchCanvas.Visibility = Visibility.Hidden;
+        }
+        // Функция для очистки панели обеда
+        private void DeInitializeLunchCanvas()
+        {
+            if (lunchCanvas != null)
+            {
+                lunchCanvas.Children.Clear();
+                lunchCanvas = null;
+            }
+        }
+        
+        
+        // Функция для создания панели ужина
+        private void InitializeDinnerCanvas()
+        {
+            Int32 height = (Int32)(FoodCanvas.Height);
+            Int32 width = (Int32)(FoodCanvas.Width - 80 - 5 - 5);
+            dinnerCanvas = Fabric.CreateCanvas((Int32)(height * 0.9), width, (Int32)(height * 0.05), 10 + 40 + 10);
+            dinnerCanvas.Background = new SolidColorBrush(Colors.PaleVioletRed);
+            dinnerCanvas.Visibility = Visibility.Hidden;
+        }
+        // Функция для очистки панели ужина
+        private void DeInitializeDinnerCanvas()
+        {
+            if (dinnerCanvas != null)
+            {
+                dinnerCanvas.Children.Clear();
+                dinnerCanvas = null;
+            }
+        }
     }
 }
