@@ -18,17 +18,12 @@ namespace HealthDesctop.source.LocalDB
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             optionsBuilder.UseSqlServer(
-                @"Server=(localdb)\MSSQLLocalDB;
-          Initial Catalog=HealthDb;
-          Integrated Security=True;",
-                options => options.EnableRetryOnFailure());
+                @"Server=(localdb)\MSSQLLocalDB;Initial Catalog=HealthDb;Integrated Security=True;");
         }
 
-        // Переопределять OnModelCreating НЕ обязательно, если все связи описаны через атрибуты
-        // Но можно оставить, если хочешь делать дополнительные настройки
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // Пока всё делаем через атрибуты — метод можно оставить пустым
+            // Настройка связей, если нужно (по желанию)
         }
     }
     
@@ -43,7 +38,7 @@ namespace HealthDesctop.source.LocalDB
             var product = new tbl_Products
             {
                 Name = name,
-                Callories = callories,
+                Calories = callories,
                 Proteins = proteins,
                 Fats = fats,
                 Carbohydrates = carbs
@@ -65,7 +60,7 @@ namespace HealthDesctop.source.LocalDB
             if (product != null)
             {
                 product.Name = newName ?? product.Name;
-                if (callories.HasValue) product.Callories = callories.Value;
+                if (callories.HasValue) product.Calories = callories.Value;
                 if (proteins.HasValue) product.Proteins = proteins.Value;
                 if (fats.HasValue) product.Fats = fats.Value;
                 if (carbs.HasValue) product.Carbohydrates = carbs.Value;

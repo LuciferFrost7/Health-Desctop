@@ -13,9 +13,11 @@ namespace HealthDesctop.source.LocalDB.Tables
         [Required]
         public string Name { get; set; }
 
-        [ForeignKey(nameof(Color))]
         public int Fk_Color { get; set; }
 
         public tbl_CategoryColor Color { get; set; }
+
+        public ICollection<tbl_ListOfProducts> ListOfProducts { get; set; }
     }
+
 }

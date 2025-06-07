@@ -9,13 +9,10 @@ namespace HealthDesctop.source.LocalDB.Tables
         [Key]
         public int Id { get; set; }
 
-        [ForeignKey(nameof(Product))]
         public int Fk_ProductId { get; set; }
-        public tbl_Products Product { get; set; }
-
-        [ForeignKey(nameof(Category))]
         public int Fk_CategoryId { get; set; }
+
+        public tbl_Products Product { get; set; }
         public tbl_Category Category { get; set; }
     }
-
 }
