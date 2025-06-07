@@ -18,12 +18,26 @@ namespace HealthDesctop.source.LocalDB
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             optionsBuilder.UseSqlServer(
-                @"Server=(localdb)\MSSQLLocalDB;Initial Catalog=HealthDb;Integrated Security=True;");
+                @"Server=(localdb)\MSSQLLocalDB;Initial Catalog=HealthDb;Integrated Security=True;",
+                options => options.EnableRetryOnFailure());
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // Настройка связей, если нужно (по желанию)
+            modelBuilder.Entity<tbl_Category>()
+                .HasOne(c => c.Color)
+                .WithMany()
+                .HasForeignKey(c => c.Fk_Color);
+
+            modelBuilder.Entity<tbl_ListOfProducts>()
+                .HasOne(lp => lp.Product)
+                .WithMany()
+                .HasForeignKey(lp => lp.Fk_ProductId);
+
+            modelBuilder.Entity<tbl_ListOfProducts>()
+                .HasOne(lp => lp.Category)
+                .WithMany()
+                .HasForeignKey(lp => lp.Fk_CategoryId);
         }
     }
     
@@ -34,17 +48,25 @@ namespace HealthDesctop.source.LocalDB
         
         public static void AddProduct(string name, int callories, int proteins, int fats, int carbs)
         {
-            using var db = new LocalDbContext();
-            var product = new tbl_Products
+            try
             {
-                Name = name,
-                Calories = callories,
-                Proteins = proteins,
-                Fats = fats,
-                Carbohydrates = carbs
-            };
-            db.Products.Add(product);
-            db.SaveChanges();
+                using var db = new LocalDbContext();
+                var product = new tbl_Products
+                {
+                    Name = name,
+                    Calories = callories,
+                    Proteins = proteins,
+                    Fats = fats,
+                    Carbohydrates = carbs
+                };
+                db.Products.Add(product);
+                db.SaveChanges();
+            }
+            catch (Exception ex)
+            {
+                // лог или сообщение
+                Console.WriteLine(ex.Message);
+            }
         }
         
         public static List<tbl_Products> GetAllProducts()
