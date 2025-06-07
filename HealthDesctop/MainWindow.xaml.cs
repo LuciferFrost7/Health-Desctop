@@ -474,10 +474,18 @@ namespace HealthDesctop
             MainPageCanvas.Background = new SolidColorBrush(Colors.LightGreen);
             mainCanvas.Children.Add(MainPageCanvas);
             
-            Button btnAddProduct = Fabric.CreateButton("Добавить продукт", 240, 60, 20, 150);
+            Button btnAddProduct = Fabric.CreateButton("Добавить продукт", 180, 60, (Int32)this.Width - 90 - 180, 150);
             MainPageCanvas.Children.Add(btnAddProduct);
-            btnAddProduct.Click += (s, e) => InitializeAddProductCanvas();
+            btnAddProduct.Click += (s, e) => InitializeFullProductAndCategoryCanvas();
             
+            var btnCreateCategory = Fabric.CreateButton("Создать категорию", 180, 40, (Int32)this.Width - 90 - 180, 300); // под кнопкой продукта
+            btnCreateCategory.Click += (s, e) =>
+            {
+                ShowCreateCategoryFullCanvas(); // метод формы создания категории
+            };
+
+            MainPageCanvas.Children.Add(btnCreateCategory);
+
             // Создание Панели День-Неделя
             InitializeDayWeekCanvas();
         }
@@ -813,61 +821,367 @@ namespace HealthDesctop
         
         
         
-        private void InitializeAddProductCanvas()
-        {
-            Canvas productCanvas = Fabric.CreateCanvas(400, 600, 200, 300);
-            productCanvas.Background = new SolidColorBrush(Colors.WhiteSmoke);
-    
-            var fields = new List<(string Label, string Tag)>
-            {
-                ("Название", "Name"),
-                ("Калории", "Calories"),
-                ("Белки", "Proteins"),
-                ("Жиры", "Fats"),
-                ("Углеводы", "Carbs")
-            };
+    private void InitializeFullProductAndCategoryCanvas()
+    {
+        Canvas canvas = Fabric.CreateCanvas((Int32)this.Height, 700, 0, 0);
+        canvas.Background = new SolidColorBrush(Colors.WhiteSmoke);
 
-            int y = 20;
-            foreach (var field in fields)
+        int y = 20;
+
+        // --- Поля продукта ---
+        var fields = new List<(string Label, string Tag)>
+        {
+            ("Название", "Name"),
+            ("Калории", "Calories"),
+            ("Белки", "Proteins"),
+            ("Жиры", "Fats"),
+            ("Углеводы", "Carbs")
+        };
+
+        foreach (var field in fields)
+        {
+            var label = Fabric.CreateTextBlock(field.Label, 16, 10, y, 10);
+            var textbox = Fabric.CreateTextBox(2, 16, 300, 30, y + 30, 10);
+            textbox.Tag = field.Tag;
+            canvas.Children.Add(label);
+            canvas.Children.Add(textbox);
+            y += 70;
+        }
+
+        // --- Категории ---
+        var categories = DbCommands.GetAllCategories();
+
+        var cbCat1 = new ComboBox { Width = 300, Height = 30, Margin = new Thickness(10, y, 0, 0) };
+        cbCat1.ItemsSource = categories;
+        cbCat1.DisplayMemberPath = "Name";
+        canvas.Children.Add(cbCat1);
+        y += 50;
+
+        var cbCat2 = new ComboBox { Width = 300, Height = 30, Margin = new Thickness(10, y, 0, 0) };
+        cbCat2.ItemsSource = categories;
+        cbCat2.DisplayMemberPath = "Name";
+        canvas.Children.Add(cbCat2);
+        y += 60;
+
+        // --- Кнопка создания продукта ---
+        var btnCreate = Fabric.CreateButton("Создать продукт", 160, 40, 10, y);
+        btnCreate.Click += (s, e) =>
+        {
+            try
             {
-                var label = Fabric.CreateTextBlock(field.Label, 16, 10, y, 10);
-                var textbox = Fabric.CreateTextBox(2, 16, 300, 30, y + 20, 10);
-                textbox.Tag = field.Tag;
-                productCanvas.Children.Add(label);
-                productCanvas.Children.Add(textbox);
-                y += 70;
+                string name = GetTextFromCanvas(canvas, "Name");
+                int cal = int.Parse(GetTextFromCanvas(canvas, "Calories"));
+                int prot = int.Parse(GetTextFromCanvas(canvas, "Proteins"));
+                int fat = int.Parse(GetTextFromCanvas(canvas, "Fats"));
+                int carb = int.Parse(GetTextFromCanvas(canvas, "Carbs"));
+
+                var product = DbCommands.AddProduct(name, cal, prot, fat, carb);
+
+                tbl_Category cat1 = cbCat1.SelectedItem as tbl_Category;
+                tbl_Category cat2 = cbCat2.SelectedItem as tbl_Category;
+
+                if (cat1 != null)
+                    DbCommands.AddListEntry(product.Id, cat1.Id);
+
+                if (cat2 != null && cat2.Id != cat1?.Id)
+                    DbCommands.AddListEntry(product.Id, cat2.Id);
+
+                MessageBox.Show("Продукт создан!");
             }
-
-            var btnCreate = Fabric.CreateButton("Создать", 140, 40, 230, y);
-            btnCreate.Click += (s, e) =>
+            catch (Exception ex)
             {
-                try
-                {
-                    string name = GetTextFromCanvas(productCanvas, "Name");
-                    int cal = int.Parse(GetTextFromCanvas(productCanvas, "Calories"));
-                    int prot = int.Parse(GetTextFromCanvas(productCanvas, "Proteins"));
-                    int fat = int.Parse(GetTextFromCanvas(productCanvas, "Fats"));
-                    int carb = int.Parse(GetTextFromCanvas(productCanvas, "Carbs"));
+                MessageBox.Show("Ошибка: " + ex.Message);
+            }
+        };
+        canvas.Children.Add(btnCreate);
 
-                    DbCommands.AddProduct(name, cal, prot, fat, carb);
-                    MessageBox.Show("Продукт создан!", "Успех");
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("Ошибка: " + ex.Message);
-                }
-            };
-
-            productCanvas.Children.Add(btnCreate);
-            MainPageCanvas.Children.Add(productCanvas);
-        }
-
-        private string GetTextFromCanvas(Canvas canvas, string tag)
+        // --- Кнопка "Создать категорию" ---
+        var btnCreateCategory = Fabric.CreateButton("Создать категорию", 160, 40, 200, y);
+        btnCreateCategory.Click += (s, e) =>
         {
-            return canvas.Children
-                .OfType<TextBox>()
-                .First(tb => (string)tb.Tag == tag)
-                .Text;
+            weekAndDayCanvas.Children.Remove(canvas);
+            ShowAllProductsCanvasWithComboBox(); // вызывает отдельно форму для просмотра продуктов
+        };
+        canvas.Children.Add(btnCreateCategory);
+
+        y += 70;
+
+        // --- ComboBox со всеми продуктами ---
+        var comboBox = new ComboBox
+        {
+            Width = 360,
+            Height = 60,
+            Margin = new Thickness(10, y, 0, 0),
+            HorizontalContentAlignment = HorizontalAlignment.Left,
+            VerticalContentAlignment = VerticalAlignment.Top,
+            FontSize = 14
+        };
+
+        var products = DbCommands.GetAllProducts();
+        foreach (var product in products)
+        {
+            var item = new ComboBoxItem
+            {
+                Content = $"{product.Name} — {product.Calories} ккал\n" +
+                          $"Б: {product.Proteins} Ж: {product.Fats} У: {product.Carbohydrates}",
+                Tag = product.Id
+            };
+            comboBox.Items.Add(item);
         }
+
+        canvas.Children.Add(comboBox);
+        y += 80;
+
+        // --- Инфо о продукте + категориях ---
+        var tbInfo = new TextBlock
+        {
+            FontSize = 14,
+            Margin = new Thickness(10, y, 0, 0),
+            TextWrapping = TextWrapping.Wrap,
+            Width = 760,
+            Height = 100
+        };
+        canvas.Children.Add(tbInfo);
+        y += 70;
+
+        comboBox.SelectionChanged += (s, e) =>
+        {
+            if (comboBox.SelectedItem is ComboBoxItem selected)
+            {
+                int id = (int)selected.Tag;
+                var product = DbCommands.GetProductById(id);
+                var categoriesList = DbCommands.GetAllListEntries()
+                    .Where(l => l.Fk_ProductId == id)
+                    .Select(l => l.Category.Name);
+
+                tbInfo.Text =
+                    $"Название: {product.Name}\nКкал: {product.Calories}\nБ: {product.Proteins}, Ж: {product.Fats}, У: {product.Carbohydrates}\n" +
+                    $"Категории: {string.Join(", ", categoriesList)}";
+            }
+        };
+
+        // --- Кнопка удаления ---
+        var btnDelete = Fabric.CreateButton("Удалить продукт", 160, 40, 10, y);
+        btnDelete.Click += (s, e) =>
+        {
+            if (comboBox.SelectedItem is ComboBoxItem selected)
+            {
+                int id = (int)selected.Tag;
+                DbCommands.DeleteProduct(id);
+                MessageBox.Show("Продукт удалён.");
+                MainPageCanvas.Children.Remove(canvas);
+            }
+            else
+            {
+                MessageBox.Show("Выберите продукт.");
+            }
+        };
+        canvas.Children.Add(btnDelete);
+
+        Border borderCanvas = Fabric.CreateBorder(Fabric.CreateThickness(2, 2, 2, 2), Brushes.Black, 50, 50);
+        borderCanvas.Child = canvas;
+        
+        // --- Кнопка закрытия ---
+        var btnClose = Fabric.CreateButton("Закрыть", 160, 40, 200, y);
+        btnClose.Click += (s, e) => weekAndDayCanvas.Children.Remove(borderCanvas);
+        canvas.Children.Add(btnClose);
+
+        weekAndDayCanvas.Children.Add(borderCanvas);
+    }
+  
+    private void ShowAllProductsCanvasWithComboBox() {
+        var canvas = Fabric.CreateCanvas(400, 550, 0, 0);
+        canvas.Background = new SolidColorBrush(Colors.WhiteSmoke);
+
+        var comboBox = new ComboBox
+        {
+            Width = 360,
+            Height = 60,
+            Margin = new Thickness(20, 20, 0, 0),
+            HorizontalContentAlignment = HorizontalAlignment.Left,
+            VerticalContentAlignment = VerticalAlignment.Top,
+            FontSize = 14
+        };
+
+        var products = DbCommands.GetAllProducts();
+
+        foreach (var product in products)
+        {
+            var item = new ComboBoxItem
+            {
+                Content = $"{product.Name} — {product.Calories} ккал\n" +
+                          $"Б: {product.Proteins} Ж: {product.Fats} У: {product.Carbohydrates}",
+                Tag = product.Id
+            };
+            comboBox.Items.Add(item);
+        }
+
+        canvas.Children.Add(comboBox);
+
+        // Кнопка удаления
+        var btnDelete = Fabric.CreateButton("Удалить продукт", 160, 40, 120, 100);
+        btnDelete.Click += (s, e) =>
+        {
+            if (comboBox.SelectedItem is ComboBoxItem selected)
+            {
+                int id = (int)selected.Tag;
+                DbCommands.DeleteProduct(id);
+                MessageBox.Show("Продукт удалён.");
+                MainPageCanvas.Children.Remove(canvas);
+            }
+            else
+            {
+                MessageBox.Show("Выберите продукт.");
+            }
+        };
+        
+        Border canvasBorder = Fabric.CreateBorder(Fabric.CreateThickness(3, 3, 3, 3), Brushes.Black, 250, 250);
+        canvasBorder.Child = canvas;
+
+        // Кнопка закрытия
+        var btnClose = Fabric.CreateButton("Закрыть", 100, 30, 140, 160);
+        btnClose.Click += (s, e) => MainPageCanvas.Children.Remove(canvasBorder);
+
+        canvas.Children.Add(btnDelete);
+        canvas.Children.Add(btnClose);
+        
+        MainPageCanvas.Children.Add(canvasBorder);
+    }
+
+    private string GetTextFromCanvas(Canvas canvas, string tag) 
+    {
+        return canvas.Children
+            .OfType<TextBox>()
+            .First(tb => (string)tb.Tag == tag)
+            .Text;
+    }
+
+
+    private void ShowCreateCategoryFullCanvas()
+    {
+        createCategoryCanvas = Fabric.CreateCanvas(320, 560, 0, 0);
+        createCategoryCanvas.Background = new SolidColorBrush(Colors.WhiteSmoke);
+        Panel.SetZIndex(createCategoryCanvas, 999); // поверх всех
+
+        int y = 30;
+
+        // Название категории
+        var lblCategoryName = Fabric.CreateTextBlock("Название категории:", 16, 20, y - 15, 10);
+        var tbCategoryName = Fabric.CreateTextBox(2, 16, 300, 30, y + 30, 10);
+        createCategoryCanvas.Children.Add(lblCategoryName);
+        createCategoryCanvas.Children.Add(tbCategoryName);
+
+        y += 80;
+
+        // Выбор цвета из существующих
+        var lblColor = Fabric.CreateTextBlock("Цвет категории:", 16, 20, y + 20, 10);
+        var cbColors = new ComboBox { Width = 300, Height = 30, Margin = new Thickness(10, y + 40, 0, 0) };
+        var colors = DbCommands.GetAllCategoryColors();
+        foreach (var color in colors)
+        {
+            var item = new ComboBoxItem
+            {
+                Content = color.Name,
+                Tag = color.Id
+            };
+            cbColors.Items.Add(item);
+        }
+
+        createCategoryCanvas.Children.Add(lblColor);
+        createCategoryCanvas.Children.Add(cbColors);
+
+        y += 100;
+
+        // Кнопка "Создать цвет"
+        var btnCreateColor = Fabric.CreateButton("Создать цвет", 160, 30, 10, y);
+        btnCreateColor.Click += (s, e) =>
+        {
+            ShowCreateColorCanvas(); // форма создания нового цвета
+        };
+        createCategoryCanvas.Children.Add(btnCreateColor);
+
+        // Кнопка "Создать категорию"
+        var btnCreate = Fabric.CreateButton("Создать категорию", 180, 40, 200, y);
+        btnCreate.Click += (s, e) =>
+        {
+            try
+            {
+                string catName = tbCategoryName.Text;
+                if (cbColors.SelectedItem is ComboBoxItem selected)
+                {
+                    int colorId = (int)selected.Tag;
+                    DbCommands.AddCategory(catName, colorId);
+                    MessageBox.Show("Категория создана.");
+                    MainPageCanvas.Children.Remove(createCategoryCanvas);
+                }
+                else
+                {
+                    MessageBox.Show("Выберите цвет.");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Ошибка: " + ex.Message);
+            }
+        };
+        createCategoryCanvas.Children.Add(btnCreate);
+
+        borderCreateCategoryCanvas = Fabric.CreateBorder(Fabric.CreateThickness(2, 2, 2, 2), Brushes.Black, 200, 250);
+        borderCreateCategoryCanvas.Child = createCategoryCanvas;
+        
+        // Кнопка закрытия
+        var btnClose = Fabric.CreateButton("Закрыть", 100, 30, 400, y);
+        btnClose.Click += (s, e) => MainPageCanvas.Children.Remove(borderCreateCategoryCanvas);
+        createCategoryCanvas.Children.Add(btnClose);
+        
+        MainPageCanvas.Children.Add(borderCreateCategoryCanvas);
+    }
+    
+    private Border borderCreateCategoryCanvas = null;
+    private Canvas createCategoryCanvas = null;
+    private void ShowCreateColorCanvas()
+    {
+        var canvas = Fabric.CreateCanvas(400, 300, 200, 150);
+        canvas.Background = new SolidColorBrush(Colors.WhiteSmoke);
+        Panel.SetZIndex(canvas, 999);
+
+        var tbColorName = Fabric.CreateTextBox(2, 16, 300, 30, 20, 10);
+        var tbR = Fabric.CreateTextBox(1, 16, 80, 30, 60, 10); 
+        var tbG = Fabric.CreateTextBox(1, 16, 80, 30, 60, 100); 
+        var tbB = Fabric.CreateTextBox(1, 16, 80, 30, 60, 190);
+
+        var btnCreate = Fabric.CreateButton("Создать цвет", 160, 30, 10, 110);
+        btnCreate.Click += (s, e) =>
+        {
+            try
+            {
+                string name = tbColorName.Text;
+                byte r = byte.Parse(tbR.Text);
+                byte g = byte.Parse(tbG.Text);
+                byte b = byte.Parse(tbB.Text);
+
+                DbCommands.AddCategoryColor(name, r, g, b);
+                MessageBox.Show("Цвет создан!");
+                MainPageCanvas.Children.Remove(canvas);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Ошибка: " + ex.Message);
+            }
+        };
+
+        var btnClose = Fabric.CreateButton("Закрыть", 100, 30, 200, 110);
+        btnClose.Click += (s, e) => createCategoryCanvas.Children.Clear();
+
+        canvas.Children.Add(tbColorName);
+        canvas.Children.Add(tbR);
+        canvas.Children.Add(tbG);
+        canvas.Children.Add(tbB);
+        canvas.Children.Add(btnCreate);
+        canvas.Children.Add(btnClose);
+
+        createCategoryCanvas.Children.Add(canvas);
+    }
+
     }
 }

@@ -46,7 +46,7 @@ namespace HealthDesctop.source.LocalDB
     {
         // ---------------------- PRODUCT ----------------------
         
-        public static void AddProduct(string name, int callories, int proteins, int fats, int carbs)
+        public static tbl_Products AddProduct(string name, int calories, int proteins, int fats, int carbs)
         {
             try
             {
@@ -54,20 +54,22 @@ namespace HealthDesctop.source.LocalDB
                 var product = new tbl_Products
                 {
                     Name = name,
-                    Calories = callories,
+                    Calories = calories,
                     Proteins = proteins,
                     Fats = fats,
                     Carbohydrates = carbs
                 };
                 db.Products.Add(product);
                 db.SaveChanges();
+                return product;
             }
             catch (Exception ex)
             {
-                // лог или сообщение
                 Console.WriteLine(ex.Message);
+                return null;
             }
         }
+
         
         public static List<tbl_Products> GetAllProducts()
         {
