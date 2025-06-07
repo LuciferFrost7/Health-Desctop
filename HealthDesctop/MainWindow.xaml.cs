@@ -19,6 +19,10 @@ using HealthDesctop.source.Fabric;
 // Подключаем анимции
 using HealthDesctop.source.Animations;
 
+// Подключае работу с Реляционной Локальной БД
+using HealthDesctop.source.LocalDB;
+using HealthDesctop.source.LocalDB.Tables;
+
 
 namespace HealthDesctop
 {
@@ -39,17 +43,7 @@ namespace HealthDesctop
         private Boolean IsRegOrLogMenuOpen = false; // Переменная показывающая открыто ли меню рег-лог сейчас
         private ComboBox usersComboBox = null; // Выпадающий список пользователей
         
-
-        
-
-        private Canvas profileCanvas; // Панель с профилем пользователя
-        private Canvas settingCanvas; // Панель с настройками приложения
-        
-        private Canvas aimsCanvas; // Панель с целью пользователя
-        private Canvas dishCanvas; // Панель с вашими блюдами
-        // Можно добавить какую-то панельку в главное меню
-        
-        
+        // 2
 
         private Canvas MainPageCanvas = null; // Панель, содержащая все основные элементы главного меню
         private static Canvas breakfastCanvas = null; // Панелька с утренним питанием
@@ -70,7 +64,9 @@ namespace HealthDesctop
 
         private Int32[] foodType = { 0, 1, 0 }; // Массив с включёнными тремя приёмами пищи
         
+        // 3
         
+
 
         
 
@@ -477,6 +473,10 @@ namespace HealthDesctop
             MainPageCanvas.Background = new SolidColorBrush(Colors.LightGreen);
             mainCanvas.Children.Add(MainPageCanvas);
             
+            Button btnAddProduct = Fabric.CreateButton("Добавить продукт", 240, 60, 20, 150);
+            MainPageCanvas.Children.Add(btnAddProduct);
+            btnAddProduct.Click += (s, e) => InitializeAddProductCanvas();
+            
             // Создание Панели День-Неделя
             InitializeDayWeekCanvas();
         }
@@ -805,6 +805,68 @@ namespace HealthDesctop
                 dinnerCanvas.Children.Clear();
                 dinnerCanvas = null;
             }
+        }
+        
+        
+        
+        
+        
+        
+        private void InitializeAddProductCanvas()
+        {
+            Canvas productCanvas = Fabric.CreateCanvas(400, 600, 200, 300);
+            productCanvas.Background = new SolidColorBrush(Colors.WhiteSmoke);
+    
+            var fields = new List<(string Label, string Tag)>
+            {
+                ("Название", "Name"),
+                ("Калории", "Calories"),
+                ("Белки", "Proteins"),
+                ("Жиры", "Fats"),
+                ("Углеводы", "Carbs")
+            };
+
+            int y = 20;
+            foreach (var field in fields)
+            {
+                var label = Fabric.CreateTextBlock(field.Label, 16, 10, y, 10);
+                var textbox = Fabric.CreateTextBox(2, 16, 300, 30, y + 20, 10);
+                textbox.Tag = field.Tag;
+                productCanvas.Children.Add(label);
+                productCanvas.Children.Add(textbox);
+                y += 70;
+            }
+
+            var btnCreate = Fabric.CreateButton("Создать", 140, 40, 230, y);
+            btnCreate.Click += (s, e) =>
+            {
+                try
+                {
+                    string name = GetTextFromCanvas(productCanvas, "Name");
+                    int cal = int.Parse(GetTextFromCanvas(productCanvas, "Calories"));
+                    int prot = int.Parse(GetTextFromCanvas(productCanvas, "Proteins"));
+                    int fat = int.Parse(GetTextFromCanvas(productCanvas, "Fats"));
+                    int carb = int.Parse(GetTextFromCanvas(productCanvas, "Carbs"));
+
+                    DbCommands.AddProduct(name, cal, prot, fat, carb);
+                    MessageBox.Show("Продукт создан!", "Успех");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Ошибка: " + ex.Message);
+                }
+            };
+
+            productCanvas.Children.Add(btnCreate);
+            MainPageCanvas.Children.Add(productCanvas);
+        }
+
+        private string GetTextFromCanvas(Canvas canvas, string tag)
+        {
+            return canvas.Children
+                .OfType<TextBox>()
+                .First(tb => (string)tb.Tag == tag)
+                .Text;
         }
     }
 }
